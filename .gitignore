@@ -1,0 +1,13 @@
+# Maven build output
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Local-only notes -- never commit
+*.private.md
+
+# Runtime
+*.log

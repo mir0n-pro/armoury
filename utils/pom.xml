@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>pro.mir0n</groupId>
+        <artifactId>armoury-parent</artifactId>
+<!--xxx: we need a stable parent version to be referenced correctly -->
+        <version>2.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>armoury-utils</artifactId>
+    <version>${utils.version}</version>
+
+    <name>ArmouryUtils</name>
+    <description>Base library, no Esquire inside. pro.mir0n.utils -- the queue rig / worker pool and the
+        host instance identity. pro.mir0n.o11y -- the three Micrometer facades
+        (business meters, the programmatic trace mark, the one place a gauge is built), kept in their own
+        package so they can be given their own jar later without a rename. The bottom of the stack:
+        armoury-utils, then herald-messaging, then esquire-common, then the services.</description>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- logging API. Nothing here knows Spring, JPA or Esquire. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- the Micrometer API, for pro.mir0n.o11y alone: the rest of this jar neither sees nor needs
+             it. Provided, so the application supplies the implementation and the registries at runtime
+             (an actuator-enabled service already carries both). -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-observation</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}-${project.version}</finalName>
+    </build>
+
+</project>

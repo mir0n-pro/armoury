@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>pro.mir0n</groupId>
+        <artifactId>armoury-parent</artifactId>
+<!--xxx: we need a stable parent version to be referenced correctly -->
+        <version>2.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>armoury-hauberk</artifactId>
+    <version>${hauberk.version}</version>
+    <packaging>jar</packaging>
+
+    <name>ArmouryHauberk</name>
+    <description>
+        Gatling-based stress / load test harness. The generic half only: the abstract Simulation base,
+        the config loader, the OIDC client, the configured health pre-check, the performance matrix and
+        the CLI. It knows no target -- what to probe, which package the Simulations live in and which
+        timing headers to read are settings, so a consumer extends this jar with its own Simulations
+        (the Esquire services and the Herald messaging lab each do).
+        Run as: java -jar armoury-hauberk.jar SUBCOMMAND.
+    </description>
+
+    <properties>
+        <!-- Gatling needs a JDK its bundled Scala runtime is built against; the harness stays on 21
+             while the rest of Armoury compiles at the parent's level. -->
+        <java.version>21</java.version>
+
+        <!-- This project's own stack: nothing else in Armoury uses any of it. -->
+        <gatling.version>3.13.5</gatling.version>
+        <jackson.version>2.18.2</jackson.version>
+        <picocli.version>4.7.6</picocli.version>
+    </properties>
+
+    <dependencies>
+        <!--
+          Gatling at compile scope (not test): HauberkCli launches Gatling programmatically via
+          io.gatling.app.Gatling.fromArgs(...), so the classes need to be on the regular runtime
+          classpath.
+        -->
+        <dependency>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>${gatling.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.gatling</groupId>
+            <artifactId>gatling-app</artifactId>
+            <version>${gatling.version}</version>
+        </dependency>
+        <!-- JSON parsing for KcTokenClient (the token response). -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <!-- CLI parsing (the standard CLI library across all projects). -->
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>${picocli.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <!--
+              Single fat jar with all dependencies + Main-Class manifest, so the
+              user can run:  java -jar target/armoury-hauberk.jar <subcommand>
+              shade is preferred over spring-boot-maven-plugin here: no Spring
+              Boot framework in this project; we just need an uber-jar.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>pro.mir0n.hauberk.cli.HauberkCli</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

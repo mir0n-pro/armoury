@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>pro.mir0n</groupId>
+    <artifactId>armoury-parent</artifactId>
+<!--xxx: we need a stable parent version to be referenced correctly -->
+    <version>2.0.0</version>
+    <packaging>pom</packaging>
+
+    <name>Armoury</name>
+    <organization>
+        <name>mir0n.pro</name>
+    </organization>
+    <url/>
+
+    <description>
+        Armoury: the base libraries. No Esquire inside. utils is the bottom of the stack -- the queue
+        rig / worker pool, the host instance identity, and the three Micrometer facades under
+        pro.mir0n.o11y; taijitu is the two-monad cache rig, built on utils; hauberk is the generic test
+        harness that drives a deployed stack.
+    </description>
+
+    <modules>
+        <module>utils</module>
+        <module>taijitu</module>
+        <module>hauberk</module>
+    </modules>
+
+    <properties>
+        <version-qualifier></version-qualifier>
+        <timestamp>${maven.build.timestamp}</timestamp>
+        <maven.build.timestamp.format>yyMM.ddHH</maven.build.timestamp.format>
+        <!-- build properties -->
+        <java.version>24</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- versions of modules -->
+<!--
+  The idea :
+   Armoury is a single Product but it has a set of projects.
+   They might have their own versioning
+-->
+        <armoury.version>2.0.0</armoury.version>
+        <utils.version>${armoury.version}</utils.version>
+        <taijitu.version>${armoury.version}</taijitu.version>
+        <hauberk.version>${armoury.version}</hauberk.version>
+
+        <!-- library versions. There is no Spring Boot BOM in this product: every version is pinned here. -->
+        <slf4j.version>2.0.17</slf4j.version>
+        <!-- the version Spring Boot 3.5.9 manages, so a consumer on that line has one Micrometer -->
+        <micrometer.version>1.15.7</micrometer.version>
+        <junit.version>5.12.2</junit.version>
+        <assertj.version>3.27.3</assertj.version>
+        <logback.version>1.5.18</logback.version>
+
+        <!-- plugin versions -->
+        <maven.compiler.version>3.13.0</maven.compiler.version>
+        <maven.jar.version>3.4.2</maven.jar.version>
+        <maven.surefire.version>3.2.5</maven.surefire.version>
+        <maven.shade.version>3.6.0</maven.shade.version>
+        <jacoco.version>0.8.13</jacoco.version>
+    </properties>
+
+    <dependencies>
+        <!-- Every Armoury project tests with these three: JUnit 5, AssertJ, and a logback binding
+             so a logback-test.xml in the project takes effect. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-observation</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven.compiler.version}</version>
+                    <configuration>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                        <release>${maven.compiler.release}</release>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven.jar.version}</version>
+                </plugin>
+
+                <!-- Only hauberk shades, but the version belongs with the other build tooling. -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven.shade.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.version}</version>
+            </plugin>
+            <!-- Code coverage: prepare-agent instruments the forked test JVM (surefire), so every test
+                 that runs in it is measured. One report per project at target/site/jacoco/index.html. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -1,0 +1,23 @@
+Armoury 2.0
+Armoury -- utils, taijitu, hauberk
+
+v2.0.0-2610.1418  v2.0.0 -- the first release: the libraries leave Esquire
+    :Refactoring: armoury-utils, the utility library, comes from Esquire services, where it was
+                  mir0n-utils
+    :Refactoring: armoury-taijitu, the recoverable cache, is a jar of its own; in Esquire it was
+                  part of mir0n-utils
+    :Refactoring: armoury-hauberk, the load-test harness, comes from Esquire explorer; the Esquire
+                  load tests stay with Esquire
+    :Doc:         README.md
+                  doc\Armoury.Utils.md
+                  doc\Armoury.Taijitu.md
+                  doc\Armoury.Haubergeon.md
+    Components:   utils (new),
+                  taijitu (new),
+                  hauberk (new)
+
+    The history before v2.0.0 is in the Esquire release notes, release v1.2.16:
+      utils, taijitu -- as mir0n-utils:
+        https://github.com/mir0n-pro/esquire.services/blob/release/v1.2.16/doc/release_notes.txt
+      hauberk:
+        https://github.com/mir0n-pro/esquire.explorer/blob/release/v1.2.16/doc/release_notes.txt

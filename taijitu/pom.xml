@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>pro.mir0n</groupId>
+        <artifactId>armoury-parent</artifactId>
+<!--xxx: we need a stable parent version to be referenced correctly -->
+        <version>2.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>armoury-taijitu</artifactId>
+    <version>${taijitu.version}</version>
+
+    <name>ArmouryTaijitu</name>
+    <description>pro.mir0n.taijitu -- the taijitu cache: two equal monads behind one director. The serving
+        monad answers reads; the shadow is loaded fresh, compared by checksum, and swapped in or
+        discarded. Built on the armoury-utils queue rig.</description>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- the queue rig the monads run on -->
+        <dependency>
+            <groupId>pro.mir0n</groupId>
+            <artifactId>armoury-utils</artifactId>
+            <version>${utils.version}</version>
+        </dependency>
+
+        <!-- logging API. Nothing here knows Spring, JPA or Esquire. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}-${project.version}</finalName>
+    </build>
+
+</project>

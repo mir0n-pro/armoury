@@ -1,0 +1,23 @@
+armoury o11y changes -- pro.mir0n.o11y
+
+10/13/2026 mir0n  v2.0.0 -- the three Micrometer facades lifted out of the Esquire common library
+BizMeters  (new here)
+  - was EsqBizMeters in the Esquire common library. The code is unchanged; the javadoc no longer argues from
+    one product's call sites. Meter NAMES are the caller's, so no dashboard moves with it
+TraceMark  (new here)
+  - was EsqTraceMark. The code is unchanged; it only ever imported Micrometer and the JDK, which is what let
+    it move below both products that use it
+Gauges  (new here)
+  - was EsqGauge. The code is unchanged; the name no longer says Esquire, because nothing here does. The
+    build-time guard that keeps Gauge.builder unreachable elsewhere lives with each consumer
+(where it ships)
+  - inside the utils project, as armoury-utils, which declares micrometer-core and micrometer-observation
+    at provided scope (pinned at 1.15.7, the version Spring Boot 3.5.9 manages). The package is
+    pro.mir0n.o11y, NOT pro.mir0n.utils.o11y: it keeps its own root so that giving these primitives a jar
+    of their own later is a pom and nothing else -- no rename, no consumer touched. mir0n, 2026-10-13
+(why it exists)
+  - the keep writer in the messaging line called EsqBizMeters and EsqTraceMark, which sat in the Esquire
+    domain library. With the keep moving into Herald that was a cycle -- herald -> esquire.services ->
+    herald -- and it also put the Esquire domain on the classpath of a lab whose whole premise is loading
+    the messaging layer without it. Both facades import Micrometer and the JDK and nothing else, so they
+    move below both products and the edge disappears

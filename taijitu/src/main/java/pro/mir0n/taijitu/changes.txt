@@ -1,0 +1,12 @@
+armoury taijitu changes -- pro.mir0n.taijitu
+
+10/14/2026 mir0n  v2.0.0 -- taijitu is a project of its own
+(project)
+  - moved from armoury/utils to armoury/taijitu: artifactId armoury-taijitu, parent armoury-parent,
+    version 2.0.0; it depends on armoury-utils. The package pro.mir0n.utils.taijitu -> pro.mir0n.taijitu;
+    the twelve classes are otherwise unchanged
+
+(earlier history)
+  - up to v2.0.0 taijitu was part of the utils project. Its history, back to v1.2.5, is in the utils
+    changes.txt, in the entries named taijitu.*:
+    utils/src/main/java/pro/mir0n/utils/changes.txt
