@@ -183,4 +183,13 @@
         </plugins>
     </build>
 
+    <!--xxx: GitHub Packages: the id must match a <server> in the settings the publish workflow writes -->
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/mir0n-pro/armoury</url>
+        </repository>
+    </distributionManagement>
+
 </project>
