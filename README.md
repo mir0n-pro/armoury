@@ -81,7 +81,7 @@ This builds the three jars and installs them into the local Maven repository:
       <tr></tr>
       <tr>
         <td style="width: auto; white-space: nowrap;"><b>armoury-utils</b></td>
-        <td style="width: 100%;"><img src="./doc/logo/utils.png" alt="utils logo" valign="middle" height="24"></td>
+        <td style="width: 100%;"><img src="./doc/logo/utils.svg" alt="utils logo" valign="middle" height="32"></td>
       </tr>
     </table>
     The base library, at the bottom of the stack.
@@ -104,7 +104,7 @@ This builds the three jars and installs them into the local Maven repository:
       <tr></tr>
       <tr>
         <td style="width: auto; white-space: nowrap;"><b>armoury-taijitu</b></td>
-        <td style="width: 100%;"><img src="./doc/logo/taijitu.svg" alt="taijitu logo" valign="middle" height="24"></td>
+        <td style="width: 100%;"><img src="./doc/logo/taijitu.svg" alt="taijitu logo" valign="middle" height="32"></td>
       </tr>
     </table>
     A recoverable cache, in <code>pro.mir0n.taijitu</code>. The cache is kept as two equal copies, the
@@ -123,7 +123,7 @@ This builds the three jars and installs them into the local Maven repository:
       <tr></tr>
       <tr>
         <td style="width: auto; white-space: nowrap;"><b>armoury-hauberk</b></td>
-        <td style="width: 100%;"><img src="./doc/logo/hauberk.svg" alt="haubergeon logo" valign="middle" height="24"></td>
+        <td style="width: 100%;"><img src="./doc/logo/hauberk.svg" alt="haubergeon logo" valign="middle" height="32"></td>
       </tr>
     </table>
     The haubergeon: a harness for smoke and load tests, built on Gatling. A mail shirt, not a full suit
