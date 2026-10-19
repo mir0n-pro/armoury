@@ -1,6 +1,6 @@
 <table style="width: 100%; table-layout: fixed;">
   <tr>
-    <td style="width: 12%"><img src="logo/utils.png" alt="utils logo" align="right" width="64" height="64"></td>
+    <td style="width: 12%"><img src="logo/utils.svg" alt="utils logo" align="right" width="64" height="64"></td>
     <td style="width: 88%;"><h1>Armoury Utils</h1></td>
   </tr>
 </table>
