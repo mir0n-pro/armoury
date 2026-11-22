@@ -35,20 +35,20 @@ class ExpiringCacheStoreIfGreaterTest {
     }
 
     @Test
-    @DisplayName("first store wins the empty slot")
+    @DisplayName("first put wins the empty slot")
     void firstStore_lands() {
         ExpiringCache<String, Seq> c = cache(60_000L);
-        assertThat(c.storeIfGreater("k", new Seq("a", 1))).isTrue();
-        assertThat(c.consume("k").value()).isEqualTo("a");
+        assertThat(c.putIfGreater("k", new Seq("a", 1))).isTrue();
+        assertThat(c.getAndRemove("k").value()).isEqualTo("a");
     }
 
     @Test
     @DisplayName("a GREATER value replaces the parked one")
     void greater_replaces() {
         ExpiringCache<String, Seq> c = cache(60_000L);
-        c.storeIfGreater("k", new Seq("old", 1));
-        assertThat(c.storeIfGreater("k", new Seq("new", 2))).isTrue();
-        assertThat(c.consume("k").value()).isEqualTo("new");
+        c.putIfGreater("k", new Seq("old", 1));
+        assertThat(c.putIfGreater("k", new Seq("new", 2))).isTrue();
+        assertThat(c.getAndRemove("k").value()).isEqualTo("new");
     }
 
     @Test
@@ -57,18 +57,18 @@ class ExpiringCacheStoreIfGreaterTest {
         // With a plain store() the late arrival wins and the stale value is handed out -- that is precisely
         // the race-8c path-buffer defect.
         ExpiringCache<String, Seq> c = cache(60_000L);
-        c.storeIfGreater("k", new Seq("new", 5));
-        assertThat(c.storeIfGreater("k", new Seq("old", 2))).isFalse();
-        assertThat(c.consume("k").value()).isEqualTo("new");
+        c.putIfGreater("k", new Seq("new", 5));
+        assertThat(c.putIfGreater("k", new Seq("old", 2))).isFalse();
+        assertThat(c.getAndRemove("k").value()).isEqualTo("new");
     }
 
     @Test
     @DisplayName("an EQUAL value does not replace -- a redelivery of the same change costs nothing")
     void equal_isRefused() {
         ExpiringCache<String, Seq> c = cache(60_000L);
-        c.storeIfGreater("k", new Seq("first", 3));
-        assertThat(c.storeIfGreater("k", new Seq("duplicate", 3))).isFalse();
-        assertThat(c.consume("k").value()).isEqualTo("first");
+        c.putIfGreater("k", new Seq("first", 3));
+        assertThat(c.putIfGreater("k", new Seq("duplicate", 3))).isFalse();
+        assertThat(c.getAndRemove("k").value()).isEqualTo("first");
     }
 
     @Test
@@ -77,17 +77,17 @@ class ExpiringCacheStoreIfGreaterTest {
         // A stale entry is not a fact about anything, so even a lesser arrival must take the slot --
         // otherwise a dead high value would block the park for good.
         ExpiringCache<String, Seq> c = cache(100L);
-        c.store("k", new Seq("stale-but-high", 99), System.currentTimeMillis() - 10_000L);
-        assertThat(c.storeIfGreater("k", new Seq("fresh-but-low", 1))).isTrue();
-        assertThat(c.consume("k").value()).isEqualTo("fresh-but-low");
+        c.put("k", new Seq("stale-but-high", 99), System.currentTimeMillis() - 10_000L);
+        assertThat(c.putIfGreater("k", new Seq("fresh-but-low", 1))).isTrue();
+        assertThat(c.getAndRemove("k").value()).isEqualTo("fresh-but-low");
     }
 
     @Test
-    @DisplayName("null key or value stores nothing and reports false")
+    @DisplayName("null key or value puts nothing and reports false")
     void nulls_areIgnored() {
         ExpiringCache<String, Seq> c = cache(60_000L);
-        assertThat(c.storeIfGreater(null, new Seq("a", 1))).isFalse();
-        assertThat(c.storeIfGreater("k", null)).isFalse();
+        assertThat(c.putIfGreater(null, new Seq("a", 1))).isFalse();
+        assertThat(c.putIfGreater("k", null)).isFalse();
         assertThat(c.size()).isZero();
     }
 
@@ -109,7 +109,7 @@ class ExpiringCacheStoreIfGreaterTest {
                 pool.submit(() -> {
                     try {
                         go.await();
-                        if (c.storeIfGreater("k", new Seq("v" + n, n))) {
+                        if (c.putIfGreater("k", new Seq("v" + n, n))) {
                             accepted.incrementAndGet();
                         }
                     } catch (InterruptedException e) {
@@ -121,7 +121,7 @@ class ExpiringCacheStoreIfGreaterTest {
             pool.shutdown();
             assertThat(pool.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
 
-            Seq survivor = c.consume("k");
+            Seq survivor = c.getAndRemove("k");
             assertThat(survivor).as("round " + round + ": something must be parked").isNotNull();
             assertThat(survivor.n()).as("round " + round + ": the greatest must survive").isEqualTo(threads);
             assertThat(accepted.get()).as("round " + round + ": at least the winner was accepted").isPositive();
@@ -141,7 +141,7 @@ class ExpiringCacheStoreIfGreaterTest {
                 pool.submit(() -> {
                     try {
                         go.await();
-                        c.storeIfGreater(k, new Seq(k + n, n));
+                        c.putIfGreater(k, new Seq(k + n, n));
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
@@ -153,7 +153,7 @@ class ExpiringCacheStoreIfGreaterTest {
         assertThat(pool.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
 
         for (String k : keys) {
-            assertThat(c.consume(k).n()).as("key " + k).isEqualTo(10L);
+            assertThat(c.getAndRemove(k).n()).as("key " + k).isEqualTo(10L);
         }
     }
 }

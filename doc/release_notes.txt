@@ -1,6 +1,21 @@
 Armoury 2.0
 Armoury -- utils, taijitu, hauberk
 
+v2.0.1-2611.2212  v2.0.1 -- one cache interface, and a read-through cache an eviction cannot overtake
+    :Feature:     IExpiringCache, the one interface of the expiring cache, with the usual cache names;
+                  an entry's age counts from the put or from the last read
+    :Feature:     KeyedExpiringCache: a read-through cache evicted by a second key; a value loaded
+                  before an eviction is never kept
+    :Refactoring: ExpiringCache methods renamed: store -> put, storeIfGreater -> putIfGreater,
+                  consume -> getAndRemove, peek -> get
+    :Fix:         the cache clean-up no longer removes a value put while it runs
+    :Doc:         README.md
+                  doc\Armoury.Utils.md
+                  doc\Armoury.ContinuousDev.md (new)
+                  doc\logo\utils.svg
+                  doc\logo\taijitu.svg
+    Components:   utils
+
 v2.0.0-2610.1418  v2.0.0 -- the first release: the libraries leave Esquire
     :Refactoring: armoury-utils, the utility library, comes from Esquire services, where it was
                   mir0n-utils

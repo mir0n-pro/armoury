@@ -13,12 +13,19 @@
  *                   than what is there, in one atomic merge. The value type is Comparable, so the cache
  *                   needs no comparator and never learns what its callers order by.
  * 10/11/2026 mir0n  v1.2.16 -- peek(K): reads the value WITHOUT taking it away
+ * 11/21/2026 mir0n  v2.0.1 -- implements IExpiringCache: store/storeIfGreater/consume/peek renamed
+ *                   put/putIfGreater/getAndRemove/get; remove(K) and keys(); Expiry AFTER_WRITE (the
+ *                   default) / AFTER_ACCESS chosen in two new constructors, get() renews the entry under
+ *                   AFTER_ACCESS; prune() removes an expired entry only while it is still the one it read;
+ *                   devLog and entries protected; method javadoc removed, a short class description
  */
 package pro.mir0n.utils.concurrent;
 
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -26,62 +33,48 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A cache whose entries expire by AGE, with hand-off ("park it now, pick it up shortly") semantics:
- * {@link #store} puts a value under a key, {@link #consume} takes it away and returns it, and anything not
- * consumed within the TTL is dropped by a background prune.
+ * An {@link IExpiringCache} on a concurrent map, with a timestamp per entry and one daemon prune thread.
+ * Every read checks the age itself, so the prune only keeps the map small: a cache that was never started
+ * is still correct, only unbounded.
  *
- * <p><b>Expiry happens in two places on purpose.</b> The scheduled prune keeps the map from growing, but a
- * reader must not depend on the scheduler having run: {@link #consume} re-checks the age of the entry it just
- * removed and returns null when it is too old. Without that lazy check an entry could slip past the prune
- * interval and be handed to a caller as if it were fresh -- the whole point of a TTL is that the caller never
- * has to think about it.
- *
- * <p><b>Consume REMOVES.</b> This is a hand-off, not a lookup table: a value is meant to be taken once. A
- * cache that needs read-many semantics is a different thing and should not be bent out of this one.
- *
- * <p><b>Lifecycle.</b> {@link #start} spawns one daemon prune thread; {@link #stop} shuts it down. Both are
- * idempotent. store / consume work with or without the prune thread running -- the lazy check above means an
- * un-started cache is still CORRECT, just unbounded, which is exactly what a unit test wants.
- *
- * <p>Framework-neutral by design: it takes a {@link Logger} and its timings as constructor arguments, so it
- * carries no dependency on Spring or on any particular configuration mechanism. The owning component supplies
- * both.
- *
- * <p><b>The value type is {@link Comparable}</b> so {@link #storeIfGreater} can order arrivals with no help
- * from the caller. The value already knows what "greater" means for it; passing a comparator in at every call
- * site said the same thing a second time, in a second place, where it could drift.
- *
- * @param <K> key type
- * @param <V> value type; its natural order is what {@link #storeIfGreater} compares
+ * <p>The logger and the timings come in through the constructor. The prune runs at half the time to live
+ * when no interval is given, and the expiry is {@link Expiry#AFTER_WRITE} when none is given.
  */
-public class ExpiringCache<K, V extends Comparable<? super V>> {
+public class ExpiringCache<K, V extends Comparable<? super V>> implements IExpiringCache<K, V> {
 
-    /** A stored value plus the epoch-ms it was stored at -- the age the TTL is measured against. */
     public record Timestamped<V>(V value, long ts) {}
 
-    private final Logger devLog;
+    protected final Logger devLog;
     private final long   ttlMs;
     private final long   pruneIntervalMs;
     private final String threadName;
+    private final Expiry expiry;
 
-    private final ConcurrentHashMap<K, Timestamped<V>> entries = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<K, Timestamped<V>> entries = new ConcurrentHashMap<>();
 
     private ScheduledExecutorService scheduler;
 
-    /** Prune at half the TTL when no interval is given: often enough that a dead entry does not linger for a
-     *  whole extra TTL, rare enough that the thread is not a cost. */
     public ExpiringCache(Logger devLog, long ttlMs) {
-        this(devLog, ttlMs, Math.max(1L, ttlMs / 2L));
+        this(devLog, ttlMs, Math.max(1L, ttlMs / 2L), Expiry.AFTER_WRITE);
     }
 
     public ExpiringCache(Logger devLog, long ttlMs, long pruneIntervalMs) {
+        this(devLog, ttlMs, pruneIntervalMs, Expiry.AFTER_WRITE);
+    }
+
+    public ExpiringCache(Logger devLog, long ttlMs, Expiry expiry) {
+        this(devLog, ttlMs, Math.max(1L, ttlMs / 2L), expiry);
+    }
+
+    public ExpiringCache(Logger devLog, long ttlMs, long pruneIntervalMs, Expiry expiry) {
         this.devLog          = devLog;
         this.ttlMs           = ttlMs;
         this.pruneIntervalMs = pruneIntervalMs;
         this.threadName      = threadNameFrom(devLog);
+        this.expiry          = expiry;
     }
 
-    /** Start the prune thread. @return true when this call started it, false when it was already running. */
+    @Override
     public synchronized boolean start() {
         boolean ret = false;
         if (scheduler == null) {
@@ -96,6 +89,7 @@ public class ExpiringCache<K, V extends Comparable<? super V>> {
         return ret;
     }
 
+    @Override
     public synchronized void stop() {
         if (scheduler != null) {
             scheduler.shutdownNow();
@@ -103,45 +97,26 @@ public class ExpiringCache<K, V extends Comparable<? super V>> {
         }
     }
 
-    /** Park a value. A later store for the same key REPLACES the earlier one -- last store wins. */
-    public void store(K key, V value) {
-        store(key, value, System.currentTimeMillis());
+    @Override
+    public void put(K key, V value) {
+        put(key, value, System.currentTimeMillis());
     }
 
-    /** Store at an explicit timestamp. Package-private: the test seam for age-dependent behaviour, so a test
-     *  can age an entry exactly instead of sleeping and hoping. */
-    void store(K key, V value, long ts) {
+    //xxx: the test seam -- a test ages an entry exactly instead of sleeping
+    void put(K key, V value, long ts) {
         if (key != null && value != null) {
             entries.put(key, new Timestamped<>(value, ts));
         }
     }
 
-    /**
-     * Park a value only when it is GREATER than what is already parked, by the value's own natural order.
-     *
-     * <p>Named for what it does -- {@code compareTo > 0} -- not for what any one caller means by it. kcMaster
-     * parks a path whose order is a change number, so there "greater" reads as "newer"; that is the caller's
-     * word, not this class's.
-     *
-     * <p>Use this instead of {@link #store} when arrivals can come out of order and the GREATEST one must win
-     * rather than the LAST one to arrive. The two are the same thing only on a single thread with an ordered
-     * feed; on a worker pool they are not, and the difference is silent.
-     *
-     * <p><b>It is one atomic operation on purpose.</b> "Read it, compare it, put it back" is a race when two
-     * threads do it for the same key at once -- the loser's write can land on top of the winner's and the
-     * older value survives. That is exactly the bug this method exists to prevent, so it must not be
-     * assembled by the caller out of {@link #consume} and {@link #store}.
-     *
-     * <p>An entry past its TTL is treated as absent: the incoming value replaces it whatever the order says,
-     * because a stale entry is not a fact about anything.
-     *
-     * @return true when the incoming value was stored
-     */
-    public boolean storeIfGreater(K key, V value) {
+    @Override
+    public boolean putIfGreater(K key, V value) {
         boolean ret = false;
         if (key != null && value != null) {
             long now = System.currentTimeMillis();
             Timestamped<V> incoming = new Timestamped<>(value, now);
+            //xxx: one atomic merge -- read, compare and put back would let the smaller value win a race; an
+            // expired entry counts as absent
             Timestamped<V> winner = entries.merge(key, incoming, (parked, fresh) ->
                     (now - parked.ts() > ttlMs) || fresh.value().compareTo(parked.value()) > 0
                             ? fresh
@@ -151,8 +126,8 @@ public class ExpiringCache<K, V extends Comparable<? super V>> {
         return ret;
     }
 
-    /** Take the value away. Returns null when there is none, or when the one found is older than the TTL. */
-    public V consume(K key) {
+    @Override
+    public V getAndRemove(K key) {
         V ret = null;
         if (key != null) {
             Timestamped<V> e = entries.remove(key);
@@ -163,7 +138,18 @@ public class ExpiringCache<K, V extends Comparable<? super V>> {
         return ret;
     }
 
-    public V peek(K key) {
+    @Override
+    public V get(K key) {
+        V ret;
+        if (expiry == Expiry.AFTER_ACCESS) {
+            ret = getAndTouch(key);
+        } else {
+            ret = getOnly(key);
+        }
+        return ret;
+    }
+
+    private V getOnly(K key) {
         V ret = null;
         if (key != null) {
             Timestamped<V> e = entries.get(key);
@@ -174,6 +160,39 @@ public class ExpiringCache<K, V extends Comparable<? super V>> {
         return ret;
     }
 
+    private V getAndTouch(K key) {
+        V ret = null;
+        if (key != null) {
+            boolean done = false;
+            while (!done) {
+                Timestamped<V> e = entries.get(key);
+                long now = System.currentTimeMillis();
+                //xxx: replace() renews only the entry read here; a store in between wins, and the loop reads again
+                if (e == null || now - e.ts() > ttlMs) {
+                    done = true;
+                } else if (entries.replace(key, e, new Timestamped<>(e.value(), now))) {
+                    ret = e.value();
+                    done = true;
+                }
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public void remove(K key) {
+        if (key != null) {
+            entries.remove(key);
+        }
+    }
+
+    //xxx: a copy taken now -- an entry stored or removed after it is not in the list
+    @Override
+    public List<K> keys() {
+        return new ArrayList<>(entries.keySet());
+    }
+
+    @Override
     public int size() {
         return entries.size();
     }
@@ -182,15 +201,16 @@ public class ExpiringCache<K, V extends Comparable<? super V>> {
         return ttlMs;
     }
 
-    /** Drop every entry older than the TTL. Safe to call directly (the scheduler calls it too). */
     public void prune() {
         long now = System.currentTimeMillis();
         int before = entries.size();
         Iterator<Map.Entry<K, Timestamped<V>>> it = entries.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<K, Timestamped<V>> e = it.next();
+            //xxx: remove the entry read here only -- a put in between must survive; it.remove() drops the key
+            // whatever it holds by then
             if (now - e.getValue().ts() > ttlMs) {
-                it.remove();
+                entries.remove(e.getKey(), e.getValue());
             }
         }
         if (devLog != null && before != entries.size()) {
@@ -198,7 +218,6 @@ public class ExpiringCache<K, V extends Comparable<? super V>> {
         }
     }
 
-    /** A thread name the owner will recognise in a dump, taken from its logger rather than asking for one. */
     private static String threadNameFrom(Logger devLog) {
         String ret = "expiring-cache";
         if (devLog != null && devLog.getName() != null) {

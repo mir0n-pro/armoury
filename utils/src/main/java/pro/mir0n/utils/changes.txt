@@ -1,5 +1,24 @@
 mir0n java common frameworks -- pro.mir0n.utils
 
+11/22/2026 mir0n  v2.0.1 -- one cache interface, and a read-through cache an eviction cannot overtake
+concurrent.IExpiringCache  (new)
+  - created (v2.0.1): the expiring-cache contract -- get, put, putIfGreater, getAndRemove, remove, keys,
+    size, start, stop, and the Expiry enum AFTER_WRITE / AFTER_ACCESS
+concurrent.IKeyedExpiringCache  (new)
+  - created (v2.0.1): IExpiringCache plus a read-through get(K, loader) returning a CompletableFuture, and
+    evict(E) by an extra key the value carries
+concurrent.KeyedExpiringCache  (new)
+  - created (v2.0.1): IKeyedExpiringCache on ExpiringCache. A load takes a ticket (the eviction count and
+    the time); its answer is stored only when no eviction of its extra key came after the ticket, the check
+    and the put under the lock evict(E) takes; eviction records kept one TTL and pruned only while still
+    the one read; a ticket older than the TTL never stores, and a refused answer is loaded again
+concurrent.ExpiringCache
+  - v2.0.1 -- implements IExpiringCache: store/storeIfGreater/consume/peek renamed
+    put/putIfGreater/getAndRemove/get; remove(K) and keys(); Expiry AFTER_WRITE (the default) /
+    AFTER_ACCESS chosen in two new constructors, get() renews the entry under AFTER_ACCESS; prune() removes
+    an expired entry only while it is still the one it read; devLog and entries protected; method javadoc
+    removed, a short class description
+
 10/14/2026 mir0n  v2.0.0 -- taijitu moved out to a project of its own
 taijitu.*
   - moved to armoury/taijitu as armoury-taijitu; package pro.mir0n.utils.taijitu -> pro.mir0n.taijitu.

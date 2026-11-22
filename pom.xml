@@ -48,7 +48,7 @@
    Armoury is a single Product but it has a set of projects.
    They might have their own versioning
 -->
-        <armoury.version>2.0.0</armoury.version>
+        <armoury.version>2.0.1</armoury.version>
         <utils.version>${armoury.version}</utils.version>
         <taijitu.version>${armoury.version}</taijitu.version>
         <hauberk.version>${armoury.version}</hauberk.version>

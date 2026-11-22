@@ -18,6 +18,10 @@ the application's to provide, and the harness brings no test of its own.
 
 ---
 >
+> **v2.0.1 -- one cache interface.** The expiring cache gets one interface, with the usual cache
+> names, and an entry's age counts from the put or from the last read. A new read-through cache,
+> `KeyedExpiringCache`, never keeps a value that an eviction came after.
+>
 > **v2.0.0 -- the first release.** The three libraries were part of Esquire until now: `utils` and
 > `taijitu` in the services repository, the haubergeon in the explorer repository. They keep their
 > history in the release notes. See [Release History](#release-history).
@@ -36,9 +40,9 @@ This builds the three jars and installs them into the local Maven repository:
 
 | Maven coordinates | What it is |
 |---|---|
-| `pro.mir0n:armoury-utils:2.0.0` | The utility library |
-| `pro.mir0n:armoury-taijitu:2.0.0` | The taijitu cache; it depends on `armoury-utils` |
-| `pro.mir0n:armoury-hauberk:2.0.0` | The haubergeon harness, also packaged as one runnable jar, `hauberk/target/armoury-hauberk.jar` |
+| `pro.mir0n:armoury-utils:2.0.1` | The utility library |
+| `pro.mir0n:armoury-taijitu:2.0.1` | The taijitu cache; it depends on `armoury-utils` |
+| `pro.mir0n:armoury-hauberk:2.0.1` | The haubergeon harness, also packaged as one runnable jar, `hauberk/target/armoury-hauberk.jar` |
 
 ### Using the published jars
 
@@ -82,6 +86,8 @@ GitHub asks for a token even for a public package. Put a personal access token (
 
 **[release_notes.txt](doc/release_notes.txt)** -- the release notes, newest first.
 
+**[report_v2.0.1.md](doc/reports/report_v2.0.1.md)** -- the report of this release.
+
 ---
 
 ## Documentation
@@ -95,6 +101,9 @@ GitHub asks for a token even for a public package. Put a personal access token (
 ### Testing
 - [Haubergeon -- Gatling harness reference](doc/Armoury.Haubergeon.md) *(the command line, the
   configuration, the health check, the token refresh, and the performance matrix)*
+
+### Next
+- [Continuous development](doc/Armoury.ContinuousDev.md) *(what to build or write next, and why)*
 
 ---
 
@@ -112,7 +121,9 @@ GitHub asks for a token even for a public package. Put a personal access token (
     </table>
     The base library, at the bottom of the stack.
        <br> - <code>pro.mir0n.utils.concurrent</code> -- <code>ExpiringCache</code>, a cache whose entries
-         expire by age: a value is stored now and picked up shortly after, or it is gone.
+         expire by age, counted from the put or from the last read: a value handed over once, read for a
+         fixed time, or kept while it is asked for. <code>KeyedExpiringCache</code> adds a read-through
+         load that an eviction cannot overtake.
          <code>IQueueRig</code> and <code>BoundedQueueRig</code>, a fixed-size queue drained by one worker
          thread. <code>WorkerPool</code>, a bounded pool of workers on platform threads, on reused virtual
          threads, or on a new virtual thread per task.
