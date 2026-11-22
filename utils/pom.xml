@@ -5,13 +5,12 @@
     <parent>
         <groupId>pro.mir0n</groupId>
         <artifactId>armoury-parent</artifactId>
-<!--xxx: we need a stable parent version to be referenced correctly -->
-        <version>2.0.0</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>armoury-utils</artifactId>
-    <version>${utils.version}</version>
+    <!--version>${utils.version}</version-->
 
     <name>ArmouryUtils</name>
     <description>Base library, no Esquire inside. pro.mir0n.utils -- the queue rig / worker pool and the

@@ -5,13 +5,12 @@
     <parent>
         <groupId>pro.mir0n</groupId>
         <artifactId>armoury-parent</artifactId>
-<!--xxx: we need a stable parent version to be referenced correctly -->
-        <version>2.0.0</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>armoury-hauberk</artifactId>
-    <version>${hauberk.version}</version>
+    <!--version>${hauberk.version}</version-->
     <packaging>jar</packaging>
 
     <name>ArmouryHauberk</name>

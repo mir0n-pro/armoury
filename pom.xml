@@ -6,8 +6,9 @@
 
     <groupId>pro.mir0n</groupId>
     <artifactId>armoury-parent</artifactId>
-<!--xxx: we need a stable parent version to be referenced correctly -->
-    <version>2.0.0</version>
+<!--xxx: the one version of every Armoury pom is ${revision}, below; the flatten plugin writes the number
+    into each pom it installs or publishes, so a consumer never reads the property -->
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>Armoury</name>
@@ -48,10 +49,13 @@
    Armoury is a single Product but it has a set of projects.
    They might have their own versioning
 -->
+        <revision>2.0.1</revision>
+<!--
         <armoury.version>2.0.1</armoury.version>
         <utils.version>${armoury.version}</utils.version>
         <taijitu.version>${armoury.version}</taijitu.version>
         <hauberk.version>${armoury.version}</hauberk.version>
+-->
 
         <!-- library versions. There is no Spring Boot BOM in this product: every version is pinned here. -->
         <slf4j.version>2.0.17</slf4j.version>
@@ -67,6 +71,7 @@
         <maven.surefire.version>3.2.5</maven.surefire.version>
         <maven.shade.version>3.6.0</maven.shade.version>
         <jacoco.version>0.8.13</jacoco.version>
+        <flatten.version>1.6.0</flatten.version>
     </properties>
 
     <dependencies>
@@ -153,6 +158,31 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>${flatten.version}</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten-clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

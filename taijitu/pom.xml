@@ -5,13 +5,12 @@
     <parent>
         <groupId>pro.mir0n</groupId>
         <artifactId>armoury-parent</artifactId>
-<!--xxx: we need a stable parent version to be referenced correctly -->
-        <version>2.0.0</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>armoury-taijitu</artifactId>
-    <version>${taijitu.version}</version>
+    <!--version>${taijitu.version}</version-->
 
     <name>ArmouryTaijitu</name>
     <description>pro.mir0n.taijitu -- the taijitu cache: two equal monads behind one director. The serving
@@ -24,7 +23,7 @@
         <dependency>
             <groupId>pro.mir0n</groupId>
             <artifactId>armoury-utils</artifactId>
-            <version>${utils.version}</version>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- logging API. Nothing here knows Spring, JPA or Esquire. -->
